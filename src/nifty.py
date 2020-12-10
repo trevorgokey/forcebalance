@@ -882,24 +882,27 @@ def getWQIds():
     global WQIDS
     return WQIDS
 
-def createWorkQueue(wq_port, debug=True, name=package):
+def createWorkQueue(wq_port, debug=False, name=package):
     global WORK_QUEUE
     if debug:
         work_queue.set_debug_flag('all')
-    WORK_QUEUE = work_queue.WorkQueue(port=wq_port)
-    WORK_QUEUE.specify_name(name)
-    # QYD: prefer the worker that is fastest in previous tasks
-    # another choice is first-come-first serve: WORK_QUEUE_SCHEDULE_FCFS
-    WORK_QUEUE.specify_algorithm(work_queue.WORK_QUEUE_SCHEDULE_TIME)
-    # QYD: We don't want to specify the following extremely long keepalive times
-    # because they will prevent checking "dead" workers, causing the program to wait forever
-    #WORK_QUEUE.specify_keepalive_timeout(8640000)
-    #WORK_QUEUE.specify_keepalive_interval(8640000)
+    if WORK_QUEUE is None:
+        WORK_QUEUE = work_queue.WorkQueue(port=wq_port)
+        WORK_QUEUE.specify_name(name)
+        # QYD: prefer the worker that is fastest in previous tasks
+        # another choice is first-come-first serve: WORK_QUEUE_SCHEDULE_FCFS
+        WORK_QUEUE.specify_algorithm(work_queue.WORK_QUEUE_SCHEDULE_TIME)
+        # QYD: We don't want to specify the following extremely long keepalive times
+        # because they will prevent checking "dead" workers, causing the program to wait forever
+        #WORK_QUEUE.specify_keepalive_timeout(8640000)
+        #WORK_QUEUE.specify_keepalive_interval(8640000)
 
 def destroyWorkQueue():
     # Convenience function to destroy the Work Queue objects.
     global WORK_QUEUE, WQIDS
+    # del WORK_QUEUE
     WORK_QUEUE = None
+    
     WQIDS = defaultdict(list)
 
 def queue_up(wq, command, input_files, output_files, tag=None, tgt=None, verbose=True, print_time=60):
