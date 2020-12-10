@@ -570,6 +570,7 @@ class Optimizer(forcebalance.BaseClass):
                     elif Quality >= ThreHQ and bump and self.trust0 > 0:
                         curr_trust = trust
                         trust += self.adapt_fac*trust*np.exp(-1*self.adapt_damp*(trust/self.trust0 - 1))
+                        trust = min(trust, 1.0)
                         if trust > curr_trust:
                             trustprint = "Increasing trust radius to % .4e\n" % trust
                     color = "\x1b[92m" if Best_Step else "\x1b[0m"
@@ -623,6 +624,7 @@ class Optimizer(forcebalance.BaseClass):
                 self.FF.print_map(vals=G,precision=8)
                 logger.info(bar)
             if self.print_hess:
+                break
                 bar = printcool("Total Hessian",color=4)
                 pmat2d(H,precision=8)
                 logger.info(bar)
@@ -982,7 +984,7 @@ class Optimizer(forcebalance.BaseClass):
                 fout.evals += 1
                 X, G, H = [Result[i] for i in ['X','G','H']]
                 if callback:
-                    if X <= self.x_best or self.x_best is None:
+                    if self.x_best is None or X <= self.x_best:
                         color = "\x1b[92m"
                         self.x_best = X
                         self.prev_bad = False
@@ -1044,8 +1046,18 @@ class Optimizer(forcebalance.BaseClass):
             return optimize.fmin(xwrap(self.Objective.Full),self.mvals0,ftol=self.convergence_objective,xtol=self.convergence_step,maxiter=self.maxstep,maxfun=self.maxstep*10)
         elif Algorithm == "anneal":
             printcool("Minimizing Objective Function using Simulated Annealing" , ansi=1, bold=1)
-            xmin, Jmin, T, feval, iters, accept, status = optimize.anneal(xwrap(self.Objective.Full), self.mvals0, lower=self.mvals0-1*self.trust0*np.ones(self.np),
-                                                                          upper=self.mvals0+self.trust0*np.ones(self.np),schedule='boltzmann', full_output=True)
+            # xmin, Jmin, T, feval, iters, accept, status = optimize.anneal(xwrap(self.Objective.Full), self.mvals0, lower=self.mvals0-1*self.trust0*np.ones(self.np),
+            #                                                               upper=self.mvals0+self.trust0*np.ones(self.np),schedule='boltzmann', full_output=True)
+            
+            temp = 10000.0
+            while temp > .09:
+                try:
+                    bounds = np.vstack((self.mvals0-1.0*self.trust0*np.ones(self.np), self.mvals0+ 1.0*self.trust0*np.ones(self.np))).T
+                    result = optimize.dual_annealing(xwrap(self.Objective.Full), x0=self.mvals0, bounds=bounds, initial_temp=temp)
+                    break
+                except RuntimeError as e:
+                    # self.trust0 *= 1.1
+                    logger.error("\nAnneal fail, reducing trust radius to {} temperature {}\n".format(self.trust0, temp))
             scodes = {0 : "Points no longer changing.",
                       1 : "Cooled to final temperature.",
                       2 : "Maximum function evaluations reached.",
@@ -1053,11 +1065,11 @@ class Optimizer(forcebalance.BaseClass):
                       4 : "Maximum accepted query locations reached.",
                       5 : "Final point not the minimum amongst encountered points."}
             logger.info("Simulated annealing info:\n")
-            logger.info("Status: %s \n" % scodes[status])
-            logger.info("Function evaluations: %i" % feval)
-            logger.info("Cooling iterations:   %i" % iters)
-            logger.info("Tests accepted:       %i" % iters)
-            return xmin
+            logger.info("Status: %s \n" % result.message)
+            logger.info("Function evaluations: %i" % result.nfev)
+            logger.info("Cooling iterations:   %i" % result.nit)
+            logger.info("Tests accepted:       %i" % result.nit)
+            return result.x
         elif Algorithm == "basinhopping":
             printcool("Minimizing Objective Function using Basin Hopping Method" , ansi=1, bold=1)
             T = xwrap(self.Objective.Full)(self.mvals0)
