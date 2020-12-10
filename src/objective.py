@@ -234,7 +234,7 @@ class Objective(forcebalance.BaseClass):
                             Tgt.meta_indicate(customdir=customdir)
                         # Note that no matter which order of function we call, we still increment the objective / gradient / Hessian the same way.
                         if not in_fd():
-                            self.ObjDict[Tgt.name] = {'w' : Tgt.weight/self.WTot , 'x' : Ans['X']}
+                            self.ObjDict[Tgt.name] = {'w' : Tgt.weight/self.WTot , 'x' : Ans['X'], 'dV': Ans.get('dV'), 'V': Ans.get('V'), 'IC': Ans.get('IC')}
                         for i in range(3):
                             Objective[Letters[i]] += Ans[Letters[i]]*Tgt.weight/self.WTot
                         Need2Evaluate.remove(Tgt)
@@ -257,7 +257,7 @@ class Objective(forcebalance.BaseClass):
                     Tgt.meta_indicate(customdir=customdir)
                 # Note that no matter which order of function we call, we still increment the objective / gradient / Hessian the same way.
                 if not in_fd():
-                    self.ObjDict[Tgt.name] = {'w' : Tgt.weight/self.WTot , 'x' : Ans['X']}
+                    self.ObjDict[Tgt.name] = {'w' : Tgt.weight/self.WTot , 'x' : Ans['X'], 'dV': Ans.get('dV'), 'V': Ans.get('V'), 'IC': Ans.get('IC')}
                 for i in range(3):
                     Objective[Letters[i]] += Ans[Letters[i]]*Tgt.weight/self.WTot
         # The target has evaluated at least once.

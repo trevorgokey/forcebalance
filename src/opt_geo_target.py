@@ -5,6 +5,7 @@
 """
 from __future__ import division
 import os
+import copy
 import shutil
 import numpy as np
 import re
@@ -293,7 +294,9 @@ class OptGeoTarget(Target):
             return np.array(v_obj_list, dtype=float)
 
         V = compute(mvals)
+        Answer['V'] = V
         Answer['X'] = np.dot(V,V)
+        Answer['IC'] = copy.deepcopy(self.internal_coordinates)
         # write objective decomposition if wanted
         if self.writelevel > 0:
             # recover mvals
@@ -324,6 +327,7 @@ class OptGeoTarget(Target):
 
         for p in self.pgrad:
             Answer['G'][p] = 2*np.dot(V, dV[p,:])
+            Answer['dV'] = dV
             for q in self.pgrad:
                 Answer['H'][p,q] = 2*np.dot(dV[p,:], dV[q,:])
         if not in_fd():
