@@ -84,7 +84,7 @@ def smirnoff_analyze_parameter_coverage(forcefield, tgt_opts):
         # analyze SMIRKs terms
         for mol_fnm in mol2_paths:
             # we work with one file at a time to avoid the topology sliently combine "same" molecules
-            openff_mol = OffMolecule.from_file(mol_fnm)
+            openff_mol = OffMolecule.from_file(mol_fnm, allow_undefined_stereo=True)
             off_topology = OffTopology.from_molecules([openff_mol])
             molecule_force_list = ff.label_molecules(off_topology)
             for mol_idx, mol_forces in enumerate(molecule_force_list):
@@ -125,7 +125,8 @@ class SMIRNOFF_Reader(BaseReader):
         ParentType = ".".join([i.tag for i in list(element.iterancestors())][::-1][1:])
         InteractionType = element.tag
         try:
-            Involved = element.attrib["smirks"]
+            # Involved = element.attrib["smirks"]
+            Involved = element.attrib["id"]
             return "/".join([ParentType, InteractionType, parameter, Involved])
         except:
             logger.info("Minor warning: Parameter ID %s doesn't contain any SMIRKS patterns, redundancies are possible\n" % ("/".join([InteractionType, parameter])))
@@ -151,7 +152,8 @@ def assign_openff_parameter(ff, new_value, pid):
     if pid not in ff._forcebalance_assign_parameter_map:
         (handler_name, tag_name, value_name, smirks) = pid.split('/')
         # Get the OpenFF parameter object
-        parameter = ff.get_parameter_handler(handler_name).parameters[smirks]
+        # parameter = ff.get_parameter_handler(handler_name).parameters[smirks]
+        parameter = [p for p in ff.get_parameter_handler(handler_name).parameters if p.id == smirks][0]
         if hasattr(parameter, value_name):
             # If the value name is an attribute of the parameter then we set it directly.
             unit = getattr(parameter, value_name).unit
@@ -276,7 +278,7 @@ class SMIRNOFF(OpenMM):
         openff_mols = []
         for fnm in self.mol2:
             try:
-                mol = OffMolecule.from_file(fnm)
+                mol = OffMolecule.from_file(fnm, allow_undefined_stereo=True)
             except Exception as e:
                 logger.error("Error when loading %s" % fnm)
                 raise e
@@ -358,10 +360,14 @@ class SMIRNOFF(OpenMM):
         if len(kwargs) > 0:
             self.simkwargs = kwargs
 
+        from openforcefield.utils.toolkits import RDKitToolkitWrapper, AmberToolsToolkitWrapper, ToolkitRegistry
+        tkr = ToolkitRegistry([RDKitToolkitWrapper, AmberToolsToolkitWrapper])
+        # sys = forcefield.create_openmm_system(ethanol.to_topology(), toolkit_registry=tkr)
+
         # Because self.forcefield is being updated in forcebalance.forcefield.FF.make()
         # there is no longer a need to create a new force field object here.
         try:
-            self.system = self.forcefield.create_openmm_system(self.off_topology)
+            self.system = self.forcefield.create_openmm_system(self.off_topology, toolkit_registry=tkr)
         except Exception as error:
             logger.error("Error when creating system for %s" % self.mol2)
             raise error
@@ -430,7 +436,7 @@ class SMIRNOFF(OpenMM):
             for force_tag, force_dict in mol_forces.items():
                 # e.g. force_tag = 'Bonds'
                 for parameter in force_dict.values():
-                    smirks_counter[parameter.smirks] += 1
+                    smirks_counter[parameter.id] += 1
         return smirks_counter
 
 class Liquid_SMIRNOFF(Liquid):
