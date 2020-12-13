@@ -823,6 +823,9 @@ class RemoteTarget(Target):
             tar.extractall()
         with open('indicate.log', 'r') as f:
             self.remote_indicate = f.read()
+        Ans = lp_load('objective.p')
+        if issubclass(type(Ans), Exception):
+            raise Ans
         return lp_load('objective.p')
 
     def indicate(self):

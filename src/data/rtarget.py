@@ -38,10 +38,17 @@ Tgt.write_indicate = False
 # The "active" parameters are determined by the master, written to disk and sent over.
 Tgt.pgrad = pgrad
 
-# Should the remote target be submitting jobs of its own??
-Tgt.submit_jobs(mvals, AGrad = AGrad, AHess = AHess)
+success = False
+try:
+    # Should the remote target be submitting jobs of its own??
+    Tgt.submit_jobs(mvals, AGrad = AGrad, AHess = AHess)
 
-Ans = Tgt.meta_get(mvals, AGrad = AGrad, AHess = AHess)
+    Ans = Tgt.meta_get(mvals, AGrad = AGrad, AHess = AHess)
+    success = True
+except Exception as e:
+    # Allow errors to propogate through the work queue so that we can have a chance
+    # to react (and act like a non-remote target)
+    Ans = e
 
 # go to the tmp folder
 os.chdir(os.path.join(Tgt.root,Tgt.tempdir))
@@ -56,7 +63,10 @@ forcebalance.nifty.lp_dump(Ans, 'objective.p')        # or some other method of 
 # also run target.indicate()
 logger = forcebalance.output.getLogger("forcebalance")
 logger.addHandler(forcebalance.output.RawFileHandler('indicate.log'))
-Tgt.indicate()
+if success:
+    Tgt.indicate()
+else:
+    print(Ans)
 print("\n")
 
 # compress all files into target_result.tar.bz2
