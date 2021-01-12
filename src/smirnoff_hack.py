@@ -11,7 +11,7 @@ def oe_cached_find_smarts_matches(self, molecule, smarts, aromaticity_model='OEA
         OE_TOOLKIT_CACHE_find_smarts_matches[cache_key] = oe_original_find_smarts_matches(self, molecule, smarts, aromaticity_model=aromaticity_model)
     return OE_TOOLKIT_CACHE_find_smarts_matches[cache_key]
 # replace the original function with new one
-OpenEyeToolkitWrapper.find_smarts_matches = oe_cached_find_smarts_matches
+# OpenEyeToolkitWrapper.find_smarts_matches = oe_cached_find_smarts_matches
 
 # cache for RDK find_smarts_matches
 rdk_original_find_smarts_matches = RDKitToolkitWrapper.find_smarts_matches
@@ -22,7 +22,9 @@ def rdk_cached_find_smarts_matches(self, molecule, smarts, aromaticity_model='OE
         RDK_TOOLKIT_CACHE_find_smarts_matches[cache_key] = rdk_original_find_smarts_matches(self, molecule, smarts, aromaticity_model=aromaticity_model)
     return RDK_TOOLKIT_CACHE_find_smarts_matches[cache_key]
 # replace the original function with new one
-RDKitToolkitWrapper.find_smarts_matches = rdk_cached_find_smarts_matches
+# broken on some molecules; my suspicion is when two smiles in different orders
+# are used, and it appears the molecules will give the same hash
+# RDKitToolkitWrapper.find_smarts_matches = rdk_cached_find_smarts_matches
 
 
 # cache for the validate function (save 94s)
