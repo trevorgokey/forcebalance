@@ -178,6 +178,9 @@ class Optimizer(forcebalance.BaseClass):
         self.uncert    = any([any([i in tgt.type.lower() for i in ['liquid', 'lipid', 'thermo']]) for tgt in self.Objective.Targets])
         self.bakdir    = os.path.join(os.path.splitext(options['input_file'])[0]+'.bak')
         self.resdir    = os.path.join('result',os.path.splitext(options['input_file'])[0])
+
+        # Holds the info of the best step to be used downstream
+        self.BestChk = None
         
         #======================================#
         #    Variables from the force field    #
@@ -570,11 +573,12 @@ class Optimizer(forcebalance.BaseClass):
                     elif Quality >= ThreHQ and bump and self.trust0 > 0:
                         curr_trust = trust
                         trust += self.adapt_fac*trust*np.exp(-1*self.adapt_damp*(trust/self.trust0 - 1))
-                        trust = min(trust, 1.0)
                         if trust > curr_trust:
                             trustprint = "Increasing trust radius to % .4e\n" % trust
                     color = "\x1b[92m" if Best_Step else "\x1b[0m"
                     if Best_Step:
+                        self.BestChk = data
+                        self.BestChk['xk'] = xk
                         if self.backup:
                             for fnm in self.FF.fnms:
                                 if os.path.exists(os.path.join(self.resdir, fnm)):
@@ -1303,11 +1307,13 @@ class Optimizer(forcebalance.BaseClass):
     def SinglePoint(self):
         """ A single-point objective function computation. """
         data        = self.Objective.Full(self.mvals0,Order=0,verbose=True)
+        self.BestChk = data
         printcool("Objective Function Single Point: %.8f" % data['X'])
 
     def Gradient(self):
         """ A single-point gradient computation. """
         data        = self.Objective.Full(self.mvals0,Order=1)
+        self.BestChk = data
         bar = printcool("Objective function: %.8f\nGradient below" % data['X'])
         self.FF.print_map(vals=data['G'],precision=8)
         logger.info(bar)
@@ -1315,6 +1321,7 @@ class Optimizer(forcebalance.BaseClass):
     def Hessian(self):
         """ A single-point Hessian computation. """
         data        = self.Objective.Full(self.mvals0,Order=2)
+        self.BestChk = data
         bar = printcool("Objective function: %.8f\nGradient below" % data['X'])
         self.FF.print_map(vals=data['G'],precision=8)
         logger.info(bar)
@@ -1327,6 +1334,7 @@ class Optimizer(forcebalance.BaseClass):
         that results in the best conditioned Hessian. """
         from scipy import optimize
         data        = self.Objective.Full(self.mvals0,Order=2,verbose=True)
+        self.BestChk = data
         X, G, H = (data['X0'], data['G0'], data['H0'])
         if len(G) < 30:
             bar = printcool("(Un-penalized) objective function: %.8f\nGradient below" % X)
