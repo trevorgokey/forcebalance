@@ -496,9 +496,15 @@ class Optimizer(forcebalance.BaseClass):
                 data        = self.Objective.Full(xk,Ord,verbose=True)
                 X, G, H = data['X'], data['G'], data['H']
             trustprint = ''
+
+            if self.BestChk is None:
+                self.BestChk = data
+                self.BestChk['xk'] = xk
+
             #================================#
             #|   Assess optimization step.  |#
             #================================#
+
             if ITERATION > self.iterinit:
                 dX_actual = X - X_prev
                 Best_Step = X < np.min(X_hist[Best_Start:])
@@ -517,7 +523,7 @@ class Optimizer(forcebalance.BaseClass):
                     self.set_goodstep(0)
                     print_progress(ITERATION, nxk, ndx, ngd, "\x1b[91m", X, X-X_prev, Quality)
                     xk = xk_prev.copy()
-                    trust = max(ndx*(1./(1+self.adapt_fac)), self.mintrust)
+                    trust = ndx*(1./(1+self.adapt_fac))
                     trustprint = "Reducing trust radius to % .4e\n" % trust
                     if self.uncert:
                         #================================#
@@ -568,7 +574,7 @@ class Optimizer(forcebalance.BaseClass):
                     #|         step quality.        |#
                     #================================#
                     if Quality <= ThreLQ and self.trust0 > 0:
-                        trust = max(ndx*(1./(1+self.adapt_fac)), self.mintrust)
+                        trust = ndx*(1./(1+self.adapt_fac))
                         trustprint = "Low quality step, reducing trust radius to % .4e\n" % trust
                     elif Quality >= ThreHQ and bump and self.trust0 > 0:
                         curr_trust = trust
