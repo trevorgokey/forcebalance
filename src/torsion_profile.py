@@ -169,6 +169,7 @@ class TorsionProfileTarget(Target):
         compute.rmsd = None
 
         V = compute(mvals, indicate=True)
+        Answer['V'] = V
 
         Answer['X'] = np.dot(V,V)
 
@@ -187,6 +188,7 @@ class TorsionProfileTarget(Target):
 
         for p in self.pgrad:
             Answer['G'][p] = 2*np.dot(V, dV[p,:])
+            Answer['dV'] = Answer['G']
             for q in self.pgrad:
                 Answer['H'][p,q] = 2*np.dot(dV[p,:], dV[q,:])
         if not in_fd():

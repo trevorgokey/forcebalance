@@ -970,7 +970,7 @@ class AbInitio(Target):
                     self.tq_ctr /= tw
 
             pvals = self.FF.make(mvals) # Write a force field that isn't perturbed by finite differences.
-        Answer = {'X':X2, 'G':G, 'H':H}
+        Answer = {'X':X2, 'G':G, 'H':H, 'dV': G, 'V': X2_Components * W_Components}
         return Answer
 
     def get_resp(self, mvals, AGrad=False, AHess=False):
@@ -1100,10 +1100,14 @@ class AbInitio(Target):
         if self.energy or self.force:
             Answer_EF = self.get_energy_force(mvals, AGrad, AHess)
             for i in Answer_EF:
+                if i not in Answer:
+                    Answer[i] = Answer_EF[i]
                 Answer[i] += w_ef * Answer_EF[i]
         if self.resp:
             Answer_ESP = self.get_resp(mvals, AGrad, AHess)
             for i in Answer_ESP:
+                if i not in Answer:
+                    Answer[i] = Answer_ESP[i]
                 Answer[i] += w_resp * Answer_ESP[i]
         if not any([self.energy, self.force, self.resp]):
             logger.error("Ab initio fitting must have at least one of: Energy, Force, ESP\n")

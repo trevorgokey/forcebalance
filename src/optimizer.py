@@ -499,7 +499,7 @@ class Optimizer(forcebalance.BaseClass):
 
             if self.BestChk is None:
                 self.BestChk = data
-                self.BestChk['xk'] = xk
+                self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': xk})
 
             #================================#
             #|   Assess optimization step.  |#
@@ -582,9 +582,9 @@ class Optimizer(forcebalance.BaseClass):
                         if trust > curr_trust:
                             trustprint = "Increasing trust radius to % .4e\n" % trust
                     color = "\x1b[92m" if Best_Step else "\x1b[0m"
+                    self.BestChk = data
+                    self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': xk})
                     if Best_Step:
-                        self.BestChk = data
-                        self.BestChk['xk'] = xk
                         if self.backup:
                             for fnm in self.FF.fnms:
                                 if os.path.exists(os.path.join(self.resdir, fnm)):
@@ -1314,12 +1314,14 @@ class Optimizer(forcebalance.BaseClass):
         """ A single-point objective function computation. """
         data        = self.Objective.Full(self.mvals0,Order=0,verbose=True)
         self.BestChk = data
+        self.BestChk.update({'trust': self.trust0, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps})
         printcool("Objective Function Single Point: %.8f" % data['X'])
 
     def Gradient(self):
         """ A single-point gradient computation. """
         data        = self.Objective.Full(self.mvals0,Order=1)
         self.BestChk = data
+        self.BestChk.update({'trust': self.trust0, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps})
         bar = printcool("Objective function: %.8f\nGradient below" % data['X'])
         self.FF.print_map(vals=data['G'],precision=8)
         logger.info(bar)
@@ -1328,6 +1330,7 @@ class Optimizer(forcebalance.BaseClass):
         """ A single-point Hessian computation. """
         data        = self.Objective.Full(self.mvals0,Order=2)
         self.BestChk = data
+        self.BestChk.update({'trust': self.trust0, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps})
         bar = printcool("Objective function: %.8f\nGradient below" % data['X'])
         self.FF.print_map(vals=data['G'],precision=8)
         logger.info(bar)
@@ -1341,6 +1344,7 @@ class Optimizer(forcebalance.BaseClass):
         from scipy import optimize
         data        = self.Objective.Full(self.mvals0,Order=2,verbose=True)
         self.BestChk = data
+        self.BestChk.update({'trust': self.trust0, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps})
         X, G, H = (data['X0'], data['G0'], data['H0'])
         if len(G) < 30:
             bar = printcool("(Un-penalized) objective function: %.8f\nGradient below" % X)
