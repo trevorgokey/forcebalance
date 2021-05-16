@@ -582,14 +582,14 @@ class Optimizer(forcebalance.BaseClass):
                         if trust > curr_trust:
                             trustprint = "Increasing trust radius to % .4e\n" % trust
                     color = "\x1b[92m" if Best_Step else "\x1b[0m"
-                    self.BestChk = data
-                    self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': xk})
                     if Best_Step:
                         if self.backup:
                             for fnm in self.FF.fnms:
                                 if os.path.exists(os.path.join(self.resdir, fnm)):
                                     bak(os.path.join(self.resdir, fnm))
                         self.FF.make(xk,printdir=self.resdir)
+                        self.BestChk = data
+                        self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': xk})
                         # logger.info("The force field has been written to the '%s' directory.\n" % self.resdir)
                         outfnm = self.save_mvals_to_input(xk)
                         # logger.info("Input file with optimization parameters saved to %s.\n" % outfnm)
