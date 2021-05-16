@@ -191,6 +191,7 @@ class SMIRNOFF(OpenMM):
 
     def __init__(self, name="openmm", **kwargs):
         self.valkwd = ['ffxml', 'pdb', 'mol2', 'platname', 'precision', 'mmopts', 'vsite_bonds', 'implicit_solvent', 'restrain_k', 'freeze_atoms']
+        self.charges = None
         super(SMIRNOFF,self).__init__(name=name, **kwargs)
 
     def readsrc(self, **kwargs):
@@ -249,6 +250,14 @@ class SMIRNOFF(OpenMM):
         mpdb = Molecule(pdbfnm)
         for i in ["chain", "atomname", "resid", "resname", "elem"]:
             self.mol.Data[i] = mpdb.Data[i]
+
+
+        if self.charges is None:
+            self.charges = []
+            for molpath in self.mol2:
+                if os.path.exists(molpath + ".q"):
+                    charges = Quantity(np.loadtxt(molpath + ".q"), unit=elementary_charge)
+                    self.charges.append(charges)
 
         # Store a separate copy of the molecule for reference restraint positions.
         self.ref_mol = deepcopy(self.mol)
@@ -367,7 +376,10 @@ class SMIRNOFF(OpenMM):
         # Because self.forcefield is being updated in forcebalance.forcefield.FF.make()
         # there is no longer a need to create a new force field object here.
         try:
-            self.system = self.forcefield.create_openmm_system(self.off_topology, toolkit_registry=tkr)
+            # really ugly, but is %100 the easiest way to get around everything
+            for mol, q in zip(self.off_topology.reference_molecules, self.charges):
+                mol.partial_charges = q
+            self.system = self.forcefield.create_openmm_system(self.off_topology, toolkit_registry=tkr, charge_from_molecules=list(self.off_topology.reference_molecules))
         except Exception as error:
             logger.error("Error when creating system for %s" % self.mol2)
             raise error
