@@ -970,7 +970,8 @@ class AbInitio(Target):
                     self.tq_ctr /= tw
 
             pvals = self.FF.make(mvals) # Write a force field that isn't perturbed by finite differences.
-        Answer = {'X':X2, 'G':G, 'H':H, 'dV': G, 'V': X2_Components * W_Components}
+        print(self.name, X2_Components, "w", W_Components)
+        Answer = {'X':X2, 'G':G, 'H':H, 'dV': G, 'V': 0.5*np.sqrt(X2_Components * W_Components)}
         return Answer
 
     def get_resp(self, mvals, AGrad=False, AHess=False):
