@@ -477,6 +477,7 @@ class Optimizer(forcebalance.BaseClass):
             logger.info("%6s%12s%12s%12s%14s%12s%12s\n" % ("Step", "  |k|  ","  |dk|  "," |grad| ","    -=X2=-  ","Delta(X2)", "StepQual"))
             logger.info("%6i%12.3e%12.3e%12.3e%s%14.5e\x1b[0m%12.3e% 11.3f\n\n" % (itn, nx, nd, ng, clr, x, std, qual))
 
+
         #=====================================#
         #|       Nonlinear Iterations        |#
         #| Loop until convergence is reached |#
@@ -499,7 +500,9 @@ class Optimizer(forcebalance.BaseClass):
 
             if self.BestChk is None:
                 self.BestChk = data
-                self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': xk})
+                # save an zeroed xk to refer to the initial conditions
+                self.BestChk.update({'trust': trust, 'finite_difference_h': self.h, 'eig_lowerbound': self.eps, 'xk': np.zeros_like(xk)})
+
 
             #================================#
             #|   Assess optimization step.  |#
