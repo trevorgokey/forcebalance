@@ -59,7 +59,7 @@ while retry != retries:
         Ans = e
 
         time.sleep(5) # not sure if this helps, but might let things settle if there
-        # are undetermined race conditions
+        # are undetermined race conditions or something I can't figure out
 
     # go to the tmp folder
     os.chdir(os.path.join(Tgt.root,Tgt.tempdir))
@@ -79,14 +79,14 @@ while retry != retries:
         logger.error(str(Ans))
         logger.error("\n")
 
-    if retry == retries:
-        break
-
     # compress all files into target_result.tar.bz2
 
     with tarfile.open(name=os.path.join(options['root'],"target_result.tar.bz2"), mode='w:bz2', dereference=True) as tar:
         for f in os.listdir('.'):
             if os.path.isfile(f):
                 tar.add(f)
+
+    if success:
+        break
 
 
